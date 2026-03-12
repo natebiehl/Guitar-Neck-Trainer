@@ -103,7 +103,7 @@ canvas{display:block;}
 /* REF */
 .card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:16px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:5px;}
 .card-label{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
-#ref-note{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent);letter-spacing:3px;min-height:36px;}
+#ref-note{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:28px;color:var(--accent);letter-spacing:2px;min-height:36px;}
 
 /* INTERVAL TRAINER */
 .interval-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
@@ -541,6 +541,8 @@ function setFeedback(id,msg,wrong) {
 }
 
 // ─── NECK DRAWING ─────────────────────────────────────────────────────────────
+// Visual layout: top row = high e (string index 5), bottom row = low E (string index 0)
+// Canvas row for string s = (5 - s)
 const STRING_LABELS = ['S1','S2','S3','S4','S5','S6'];
 const LEFT_PAD = 34; // space for string labels
 const TOP_PAD  = 22; // space for fret numbers
@@ -588,7 +590,7 @@ function drawNeck(canvas, highlights, interactive, onTap, rangeOverride) {
         const n = noteAt(s,f);
         if (!diatonic.has(n)) continue;
         const x = LEFT_PAD + i*COL_W;
-        const y = TOP_PAD + s*ROW_H + ROW_H/2;
+        const y = TOP_PAD + (5-s)*ROW_H + ROW_H/2;
         const interval = (NOTE_NAMES.indexOf(n) - root + 12) % 12;
         const isTriad = triadIntervals.has(interval);
         const sqSize = 9;
@@ -600,8 +602,8 @@ function drawNeck(canvas, highlights, interactive, onTap, rangeOverride) {
 
   // ── String lines
   for (let s=0;s<6;s++) {
-    const y = TOP_PAD + s*ROW_H + ROW_H/2;
-    const thick = 0.8 + s*0.25; // thicker for lower strings
+    const y = TOP_PAD + (5-s)*ROW_H + ROW_H/2;
+    const thick = 2.05 - s*0.25; // s=0 (low E) = 2.05 thickest, s=5 (high e) = 0.8 thinnest
     ctx.strokeStyle='rgba(127,191,176,0.5)';
     ctx.lineWidth=thick;
     ctx.beginPath(); ctx.moveTo(LEFT_PAD,y); ctx.lineTo(W-4,y); ctx.stroke();
@@ -660,7 +662,7 @@ function drawNeck(canvas, highlights, interactive, onTap, rangeOverride) {
         if (keyOnly && !diatonic.has(n)) continue;
         const deg = DEGREE_NAMES[(NOTE_NAMES.indexOf(n)-root+12)%12];
         const x = LEFT_PAD + i*COL_W;
-        const y = TOP_PAD + s*ROW_H + ROW_H/2;
+        const y = TOP_PAD + (5-s)*ROW_H + ROW_H/2;
         const r = 11;
         ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
         ctx.fillStyle='rgba(255,255,255,0.13)'; ctx.fill();
@@ -676,7 +678,7 @@ function drawNeck(canvas, highlights, interactive, onTap, rangeOverride) {
   (highlights||[]).forEach(h => {
     if (h.f<fretMin || h.f>=fretMin+fretCount) return;
     const x = LEFT_PAD + (h.f-fretMin)*COL_W;
-    const y = TOP_PAD + h.s*ROW_H + ROW_H/2;
+    const y = TOP_PAD + (5-h.s)*ROW_H + ROW_H/2;
     ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2);
     ctx.fillStyle = h.color||'#c8a84b'; ctx.fill();
     if (h.label) {
@@ -698,7 +700,8 @@ function drawNeck(canvas, highlights, interactive, onTap, rangeOverride) {
       const px=((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*scaleX;
       const py=((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*scaleY;
       const col=Math.round((px-LEFT_PAD)/COL_W);
-      const s  =Math.round((py-TOP_PAD-ROW_H/2)/ROW_H);
+      const row=Math.round((py-TOP_PAD-ROW_H/2)/ROW_H);
+      const s=5-row;
       if (col>=0&&col<fretCount&&s>=0&&s<6) onTap(s, fretMin+col);
     };
     canvas.ontouchstart=handler; canvas.onclick=handler;
